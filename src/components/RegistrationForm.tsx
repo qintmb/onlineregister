@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react'
-import { motion } from 'framer-motion'
 import { Briefcase, Building2 } from 'lucide-react'
 import { SearchInput } from './SearchInput'
 import { SignatureCanvas, SignatureCanvasHandle } from './SignatureCanvas'
@@ -100,12 +99,7 @@ export function RegistrationForm() {
 
   return (
     <>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="glass-card w-full max-w-sm p-6 space-y-5"
-      >
+      <div className="glass-card w-full max-w-sm p-6 space-y-5 animate-fade-in">
         <div className="text-center space-y-1 mb-2">
           <h2 className="text-lg font-bold text-slate-900 leading-tight">REGISTRASI</h2>
           <div className="h-1 w-12 bg-blue-600 mx-auto rounded-full opacity-80"></div>
@@ -203,7 +197,7 @@ export function RegistrationForm() {
             </button>
           </div>
         </form>
-      </motion.div>
+      </div>
 
       <SuccessModal
         isOpen={showSuccess}

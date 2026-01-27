@@ -33,26 +33,62 @@ export default function DaftarHadirPage() {
   }
 
   const exportToExcel = () => {
-    const title = [['DAFTAR HADIR RAKER 2026 PT SEMEN TONASA']]
-    const date = [[`Export Date: ${new Date().toLocaleString('id-ID')}`]]
-    const spacer = [['']]
-    const headers = [['No', 'Waktu Check-In', 'Nama', 'Jabatan', 'Instansi']]
+    // Create worksheet data
+    const wsData: (string | number)[][] = []
     
-    const rows = data.map((item, index) => [
-      index + 1,
-      new Date(item.check_in).toLocaleString('id-ID'),
-      item.nama,
-      item.jabatan,
-      item.departemen_instansi
-    ])
+    // Row 1: Title (will be merged)
+    wsData.push(['DAFTAR HADIR RAKER 2026 PT SEMEN TONASA', '', '', '', '', ''])
+    
+    // Row 2: Empty spacer
+    wsData.push(['', '', '', '', '', ''])
+    
+    // Row 3: Info row
+    const exportDate = new Date().toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'numeric', 
+      year: 'numeric'
+    })
+    wsData.push([`Total: ${data.length} peserta`, '', '', '', '', `Export: ${exportDate}`])
+    
+    // Row 4: Empty spacer
+    wsData.push(['', '', '', '', '', ''])
+    
+    // Row 5: Headers
+    wsData.push(['NO', 'WAKTU', 'NAMA', 'JABATAN', 'INSTANSI', 'TTD'])
+    
+    // Data rows
+    data.forEach((item, index) => {
+      wsData.push([
+        index + 1,
+        new Date(item.check_in).toLocaleString('id-ID', {
+          day: '2-digit',
+          month: 'short',
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+        item.nama,
+        item.jabatan,
+        item.departemen_instansi,
+        '' // TTD placeholder - images not supported in basic xlsx
+      ])
+    })
 
-    const worksheet = XLSX.utils.aoa_to_sheet([
-      ...title,
-      ...date,
-      ...spacer,
-      ...headers,
-      ...rows
-    ])
+    const worksheet = XLSX.utils.aoa_to_sheet(wsData)
+    
+    // Set column widths to match reference
+    worksheet['!cols'] = [
+      { wch: 5 },   // NO
+      { wch: 14 },  // WAKTU
+      { wch: 25 },  // NAMA
+      { wch: 25 },  // JABATAN
+      { wch: 30 },  // INSTANSI
+      { wch: 15 }   // TTD
+    ]
+    
+    // Merge title cell across all columns
+    worksheet['!merges'] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 5 } } // Merge A1:F1
+    ]
 
     const workbook = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Daftar Hadir')
