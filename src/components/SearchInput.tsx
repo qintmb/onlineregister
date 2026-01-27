@@ -18,7 +18,8 @@ export function SearchInput({ onSelect, value, onChange }: SearchInputProps) {
 
   useEffect(() => {
     const searchParticipants = async () => {
-      if (value.length < 2) {
+      // Require minimum 3 characters for search
+      if (value.length < 3) {
         setSuggestions([])
         return
       }
@@ -29,7 +30,7 @@ export function SearchInput({ onSelect, value, onChange }: SearchInputProps) {
           .from('daftar_nama')
           .select('*')
           .ilike('nama', `%${value}%`)
-          .limit(10)
+          .limit(5) // Reduced from 10 for faster response
 
         if (error) throw error
         setSuggestions(data || [])
@@ -108,7 +109,7 @@ export function SearchInput({ onSelect, value, onChange }: SearchInputProps) {
           </div>
         )}
 
-        {isOpen && value.length >= 2 && suggestions.length === 0 && !isLoading && (
+        {isOpen && value.length >= 3 && suggestions.length === 0 && !isLoading && (
           <div className="search-dropdown">
             <div className="p-3 text-center text-xs text-slate-500">
               Tidak ada hasil

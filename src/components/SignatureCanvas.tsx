@@ -15,58 +15,50 @@ interface SignatureCanvasProps {
 export const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvasProps>(({ onSignatureChange, disabled = false }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const [isDrawing, setIsDrawing] = useState(false)
   const [hasSignature, setHasSignature] = useState(false)
   
-  // Refs for drawing state to avoid closure staleness in event listeners
+  // Refs for performance - avoid React state updates during drawing
   const drawingState = useRef({
     isDrawing: false,
     lastX: 0,
-    lastY: 0
+    lastY: 0,
+    hasSignature: false,
+    scaled: false
   })
+  
+  // RAF for throttling draw calls
+  const rafId = useRef<number | null>(null)
+  const lastEvent = useRef<React.MouseEvent | React.TouchEvent | null>(null)
 
-  // Initialize and handle resize
+  // Initialize canvas ONCE on mount - no ResizeObserver for mobile performance
   useEffect(() => {
     const canvas = canvasRef.current
     const container = containerRef.current
     if (!canvas || !container) return
 
-    const resizeCanvas = () => {
-      const rect = container.getBoundingClientRect()
-      const dpr = window.devicePixelRatio || 1
-      
-      // Set actual size in memory (scaled to account for extra pixel density)
-      canvas.width = rect.width * dpr
-      canvas.height = rect.height * dpr
-      
-      // Make it visually fill the positioned parent
-      canvas.style.width = `${rect.width}px`
-      canvas.style.height = `${rect.height}px`
+    // Only set up canvas once
+    if (drawingState.current.scaled) return
 
-      const ctx = canvas.getContext('2d')
-      if (ctx) {
-        // Scale all drawing operations by the dpr, so you don't have to worry about the difference.
-        ctx.scale(dpr, dpr)
-        ctx.strokeStyle = '#000000'
-        ctx.lineWidth = 2.5
-        ctx.lineCap = 'round'
-        ctx.lineJoin = 'round'
-      }
-    }
-
-    // Initial resize
-    resizeCanvas()
-
-    // Observe container resize
-    const resizeObserver = new ResizeObserver(() => {
-     // Optional: Debounce this if needed, but usually fine for layout shifts
-      resizeCanvas()
-    })
+    const rect = container.getBoundingClientRect()
+    const dpr = Math.min(window.devicePixelRatio || 1, 2) // Cap at 2x for performance
     
-    resizeObserver.observe(container)
+    // Set actual size in memory
+    canvas.width = rect.width * dpr
+    canvas.height = rect.height * dpr
+    
+    // Make it visually fill the parent
+    canvas.style.width = `${rect.width}px`
+    canvas.style.height = `${rect.height}px`
 
-    return () => {
-      resizeObserver.disconnect()
+    const ctx = canvas.getContext('2d')
+    if (ctx) {
+      // Scale ONCE
+      ctx.scale(dpr, dpr)
+      ctx.strokeStyle = '#000000'
+      ctx.lineWidth = 2.5
+      ctx.lineCap = 'round'
+      ctx.lineJoin = 'round'
+      drawingState.current.scaled = true
     }
   }, [])
 
@@ -76,7 +68,7 @@ export const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvas
     }
   }))
 
-  const getCoordinates = (e: React.MouseEvent | React.TouchEvent | MouseEvent | TouchEvent) => {
+  const getCoordinates = (e: React.MouseEvent | React.TouchEvent) => {
     const canvas = canvasRef.current
     if (!canvas) return { x: 0, y: 0 }
 
@@ -84,29 +76,26 @@ export const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvas
     let clientX, clientY
 
     if ('touches' in e) {
-       // Touch event
-       if (e.touches.length > 0) {
-         clientX = e.touches[0].clientX
-         clientY = e.touches[0].clientY
-       } else {
-         return { x: drawingState.current.lastX, y: drawingState.current.lastY }
-       }
+      if (e.touches.length > 0) {
+        clientX = e.touches[0].clientX
+        clientY = e.touches[0].clientY
+      } else {
+        return { x: drawingState.current.lastX, y: drawingState.current.lastY }
+      }
     } else {
-      // Mouse event
-      clientX = (e as React.MouseEvent).clientX
-      clientY = (e as React.MouseEvent).clientY
+      clientX = e.clientX
+      clientY = e.clientY
     }
 
     return {
-      x: clientX! - rect.left,
-      y: clientY! - rect.top
+      x: clientX - rect.left,
+      y: clientY - rect.top
     }
   }
 
   const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
     if (disabled) return
-    // Prevent scrolling when touching the canvas to draw
-    if (e.cancelable && e.type.startsWith('touch')) e.preventDefault()
+    if (e.cancelable && 'touches' in e) e.preventDefault()
     
     const { x, y } = getCoordinates(e)
     
@@ -114,25 +103,21 @@ export const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvas
     drawingState.current.lastX = x
     drawingState.current.lastY = y
     
-    setIsDrawing(true)
-    
-    // Draw a single dot
+    // Draw initial dot
     const canvas = canvasRef.current
     const ctx = canvas?.getContext('2d')
     if (ctx) {
-        ctx.beginPath()
-        ctx.arc(x, y, ctx.lineWidth / 2, 0, Math.PI * 2)
-        ctx.fillStyle = ctx.strokeStyle
-        ctx.fill()
-        ctx.beginPath() // Start new path for movement
-        ctx.moveTo(x, y)
+      ctx.beginPath()
+      ctx.arc(x, y, ctx.lineWidth / 2, 0, Math.PI * 2)
+      ctx.fillStyle = ctx.strokeStyle as string
+      ctx.fill()
+      ctx.beginPath()
+      ctx.moveTo(x, y)
     }
   }
 
-  const draw = (e: React.MouseEvent | React.TouchEvent) => {
-    if (disabled || !drawingState.current.isDrawing) return
-    if (e.cancelable && e.type.startsWith('touch')) e.preventDefault()
-    
+  // Actual draw function called by RAF
+  const actuallyDraw = (e: React.MouseEvent | React.TouchEvent) => {
     const { x, y } = getCoordinates(e)
     const { lastX, lastY } = drawingState.current
     
@@ -141,33 +126,50 @@ export const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvas
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    // Request Animation Frame optimization implied by browser's event handling + canvas speed,
-    // but we can draw smooth curves directly here.
-    
-    // Quadratic curve for smoother lines
     ctx.beginPath()
     ctx.moveTo(lastX, lastY)
-    // Use average point for quadratic curve which makes it smoother
-    // const midX = (lastX + x) / 2
-    // const midY = (lastY + y) / 2
-    // ctx.quadraticCurveTo(lastX, lastY, midX, midY)
-    
-    // Simple line for responsiveness (quadratic can lag slightly purely on math)
     ctx.lineTo(x, y)
     ctx.stroke()
     
     drawingState.current.lastX = x
     drawingState.current.lastY = y
+    
+    // Use ref, not state, during drawing
+    drawingState.current.hasSignature = true
+  }
 
-    if (!hasSignature) {
-      setHasSignature(true)
+  // Throttled draw using RAF - max 60fps
+  const draw = (e: React.MouseEvent | React.TouchEvent) => {
+    if (disabled || !drawingState.current.isDrawing) return
+    if (e.cancelable && 'touches' in e) e.preventDefault()
+    
+    lastEvent.current = e
+    
+    if (!rafId.current) {
+      rafId.current = requestAnimationFrame(() => {
+        if (lastEvent.current) {
+          actuallyDraw(lastEvent.current)
+        }
+        rafId.current = null
+      })
     }
   }
 
   const endDrawing = () => {
     if (drawingState.current.isDrawing) {
       drawingState.current.isDrawing = false
-      setIsDrawing(false)
+      
+      // Cancel any pending RAF
+      if (rafId.current) {
+        cancelAnimationFrame(rafId.current)
+        rafId.current = null
+      }
+      
+      // NOW update React state (only once at end)
+      if (drawingState.current.hasSignature && !hasSignature) {
+        setHasSignature(true)
+      }
+      
       saveSignature()
     }
   }
@@ -178,12 +180,12 @@ export const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvas
 
     const ctx = canvas.getContext('2d')
     if (ctx) {
-      // Clear with consideration of the scale
       ctx.save()
       ctx.setTransform(1, 0, 0, 1, 0, 0)
       ctx.clearRect(0, 0, canvas.width, canvas.height)
       ctx.restore()
       
+      drawingState.current.hasSignature = false
       setHasSignature(false)
       onSignatureChange(null)
     }
@@ -191,12 +193,7 @@ export const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvas
 
   const saveSignature = () => {
     const canvas = canvasRef.current
-    if (canvas) {
-      // We need to create a new canvas to normalize the output size 
-      // or just export what we have.
-      // Exporting directly from the scaled canvas is usually fine, 
-      // but let's ensure white background.
-      
+    if (canvas && drawingState.current.hasSignature) {
       const newCanvas = document.createElement('canvas')
       newCanvas.width = canvas.width
       newCanvas.height = canvas.height
@@ -207,7 +204,6 @@ export const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvas
         ctx.fillRect(0, 0, newCanvas.width, newCanvas.height)
         ctx.drawImage(canvas, 0, 0)
         
-        // Quality 0.6 is good enough for signatures and smaller size
         const dataUrl = newCanvas.toDataURL('image/jpeg', 0.6)
         onSignatureChange(dataUrl)
       }
@@ -237,10 +233,10 @@ export const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvas
         className={`relative rounded-xl overflow-hidden glass-input p-0 h-40 group select-none ${
            disabled 
              ? 'bg-slate-100 cursor-not-allowed opacity-75' 
-             : 'bg-white/90 cursor-crosshair touch-none'
+             : 'bg-white cursor-crosshair'
         }`}
+        style={{ touchAction: disabled ? 'auto' : 'none' }}
       >
-        {/* Placeholder / overlay */}
         {(!hasSignature || disabled) && (
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none opacity-40">
             {disabled ? (
