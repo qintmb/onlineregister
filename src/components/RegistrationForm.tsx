@@ -14,19 +14,41 @@ export function RegistrationForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isAlreadyRegistered, setIsAlreadyRegistered] = useState(false)
+  const [isCheckingStatus, setIsCheckingStatus] = useState(false)
   
   const signatureRef = useRef<SignatureCanvasHandle>(null)
 
   // Validation: Name must be selected from whitelist
   const isNameValid = selectedParticipant !== null && searchValue === selectedParticipant.nama
-  const isFormComplete = isNameValid && jabatan && instansi && signature
+  const isFormComplete = isNameValid && jabatan && instansi && signature && !isAlreadyRegistered
 
-  const handleParticipantSelect = (participant: DaftarNama) => {
+  const handleParticipantSelect = async (participant: DaftarNama) => {
     setSelectedParticipant(participant)
     setSearchValue(participant.nama)
     setJabatan(participant.jabatan)
     setInstansi(participant.departemen_instansi)
     setError(null)
+    setIsAlreadyRegistered(false)
+
+    // Check if member already checked-in
+    setIsCheckingStatus(true)
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('daftar_hadir')
+        .select('uuid')
+        .eq('uuid', participant.id)
+        .maybeSingle()
+      
+      if (fetchError) throw fetchError
+      if (data) {
+        setIsAlreadyRegistered(true)
+      }
+    } catch (err) {
+      console.error('Error checking registration status:', err)
+    } finally {
+      setIsCheckingStatus(false)
+    }
   }
 
   const handleCancel = () => {
@@ -36,6 +58,7 @@ export function RegistrationForm() {
     setInstansi('')
     setSignature(null)
     setError(null)
+    setIsAlreadyRegistered(false)
     signatureRef.current?.resetSignature()
   }
 
@@ -43,6 +66,7 @@ export function RegistrationForm() {
     e.preventDefault()
     
     if (!selectedParticipant) return setError('Pilih nama peserta dahulu')
+    if (isAlreadyRegistered) return setError('Anda sudah melakukan check-in')
     if (!signature) return setError('Tanda tangan diperlukan')
 
     setIsSubmitting(true)
@@ -115,6 +139,7 @@ export function RegistrationForm() {
                 setSelectedParticipant(null)
                 setJabatan('')
                 setInstansi('')
+                setIsAlreadyRegistered(false)
               }
             }}
             onSelect={handleParticipantSelect}
@@ -123,7 +148,7 @@ export function RegistrationForm() {
           {/* Jabatan & Instansi - Same Width as Nama */}
           <div className="grid grid-cols-1 gap-3">
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-500 tracking-wider uppercase">Jabatan</label>
+              <label className="text-xs font-bold text-slate-500 tracking-wider uppercase">Jabatan</label>
               <div className="relative">
                 <Briefcase className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
                 <input
@@ -137,7 +162,7 @@ export function RegistrationForm() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-500 tracking-wider uppercase">Instansi</label>
+              <label className="text-xs font-bold text-slate-500 tracking-wider uppercase">DEPT. / UNIT</label>
               <div className="relative">
                 <Building2 className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
                 <input
@@ -156,14 +181,21 @@ export function RegistrationForm() {
             <SignatureCanvas 
               ref={signatureRef} 
               onSignatureChange={setSignature} 
-              disabled={!selectedParticipant}
+              disabled={!selectedParticipant || isAlreadyRegistered || isCheckingStatus}
             />
           </div>
 
+          {/* Duplication Warning */}
+          {isAlreadyRegistered && (
+            <div className="text-red-600 text-[11px] text-center bg-red-50 py-2 rounded-lg border border-red-200 font-bold px-2 animate-pulse">
+              ⚠️ Nama ini sudah melakukan registrasi/check-in sebelumnya.
+            </div>
+          )}
+
           {/* Validation Warning */}
-          {searchValue && !isNameValid && (
+          {searchValue && !isNameValid && !isCheckingStatus && (
             <div className="text-amber-600 text-xs text-center bg-amber-50 py-2 rounded-lg border border-amber-200 font-medium">
-              ⚠️ Pilih nama dari daftar yang tersedia
+              * Pilih nama dari daftar yang tersedia
             </div>
           )}
 
@@ -179,21 +211,21 @@ export function RegistrationForm() {
             <button
               type="button"
               onClick={handleCancel}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isCheckingStatus}
               className="glass-button glass-button-secondary py-2.5 text-sm"
             >
               Batal
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || !isFormComplete}
+              disabled={isSubmitting || !isFormComplete || isCheckingStatus}
               className={`glass-button py-2.5 text-sm flex items-center justify-center gap-2 shadow-blue-500/20 transition-all ${
-                !isFormComplete 
-                  ? 'bg-slate-300 cursor-not-allowed hover:bg-slate-300' 
-                  : 'bg-blue-600 hover:bg-blue-700'
+                !isFormComplete || isCheckingStatus
+                   ? 'bg-slate-300 cursor-not-allowed hover:bg-slate-300' 
+                   : 'bg-blue-600 hover:bg-blue-700'
               }`}
             >
-              {isSubmitting ? <span className="spinner w-4 h-4 border-2" /> : 'Check In'}
+              {isSubmitting || isCheckingStatus ? <span className="spinner w-4 h-4 border-2" /> : 'Check In'}
             </button>
           </div>
         </form>

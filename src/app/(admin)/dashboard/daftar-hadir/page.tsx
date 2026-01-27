@@ -119,6 +119,40 @@ export default function DaftarHadirPage() {
 
     setIsDeleting(true)
     try {
+      // 1. Get photo URLs for storage cleanup
+      const { data: toDelete, error: fetchError } = await supabase
+        .from('daftar_hadir')
+        .select('photo_ttd_url')
+        .in('id', selectedIds)
+      
+      if (fetchError) throw fetchError
+
+      if (toDelete && toDelete.length > 0) {
+        // Extract paths from URLs
+        // URL format: .../ttd/uuid/filename.jpg?token=...
+        const paths = toDelete.map(item => {
+          const url = item.photo_ttd_url
+          const parts = url.split('/ttd/')
+          if (parts.length > 1) {
+            // Take part after /ttd/ and remove query params if any
+            return parts[1].split('?')[0]
+          }
+          return null
+        }).filter(Boolean) as string[]
+
+        if (paths.length > 0) {
+          const { error: storageError } = await supabase.storage
+            .from('ttd')
+            .remove(paths)
+          
+          if (storageError) {
+            console.warn('Storage cleanup failed partially:', storageError)
+            // We continue even if storage delete fails, to ensure DB is cleaned
+          }
+        }
+      }
+
+      // 2. Delete from table
       const { error } = await supabase
         .from('daftar_hadir')
         .delete()
@@ -139,7 +173,7 @@ export default function DaftarHadirPage() {
 
   return (
     <div className="space-y-4">
-      <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 no-print">
+      <header className="sticky -top-4 md:-top-8 z-20 bg-slate-50/80 backdrop-blur-md -mx-4 px-4 md:-mx-8 md:px-8 py-4 border-b border-slate-200 mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 no-print">
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-slate-900">Daftar Hadir</h1>

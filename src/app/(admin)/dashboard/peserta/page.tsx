@@ -93,9 +93,9 @@ export default function PesertaPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+      <header className="sticky -top-4 md:-top-8 z-20 bg-slate-50/80 backdrop-blur-md -mx-4 px-4 md:-mx-8 md:px-8 py-4 border-b border-slate-200 mb-6 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
         <div className="w-full xl:w-auto">
-          <h1 className="text-2xl font-bold text-slate-900">List Peserta</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Peserta</h1>
           <p className="text-slate-500 text-sm">Database peserta RAKER 2026</p>
         </div>
         
@@ -165,13 +165,11 @@ export default function PesertaPage() {
         <div className="glass-card overflow-hidden ring-1 ring-slate-200 shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-left">
-              <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider border-b border-slate-200">
+              <thead className="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-wider border-b border-slate-200">
                 <tr>
-                  <th className="px-6 py-4 font-semibold w-16 text-center">Status</th>
-                  <th className="px-6 py-4 font-semibold">Nama Lengkap</th>
-                  <th className="px-6 py-4 font-semibold">Jabatan</th>
-                  <th className="px-6 py-4 font-semibold">Instansi</th>
-                  <th className="px-6 py-4 text-right font-semibold">Added</th>
+                  <th className="px-3 py-2 font-semibold w-12 text-center">Status</th>
+                  <th className="px-3 py-2 font-semibold">Nama & Jabatan</th>
+                  <th className="px-3 py-2 font-semibold">DEPT/ Unit</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -179,43 +177,42 @@ export default function PesertaPage() {
                   const isCheckedIn = checkedInUuids.has(item.id)
                   return (
                     <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4 text-center">
+                      <td className="px-3 py-2 text-center">
                         <div className="flex justify-center">
                           {isCheckedIn ? (
                             <div className="group relative">
-                               <CheckCircle size={20} className="text-green-500" />
-                               <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 bg-slate-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                               <CheckCircle size={18} className="text-green-500" />
+                               <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 bg-slate-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
                                  Sudah Check-in
                                </span>
                             </div>
                           ) : (
                             <div className="group relative">
-                              <XCircle size={20} className="text-red-200" />
-                               <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 bg-slate-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                              <XCircle size={18} className="text-red-200" />
+                               <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 bg-slate-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
                                  Belum Check-in
                                </span>
                             </div>
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-slate-900 font-medium">
-                        {item.nama}
+                      <td className="px-3 py-2">
+                        <div className="text-slate-900 font-bold text-xs leading-tight">
+                          {item.nama}
+                        </div>
+                        <div className="text-slate-500 text-[10px] leading-tight mt-0.5">
+                          {item.jabatan}
+                        </div>
                       </td>
-                      <td className="px-6 py-4 text-slate-600 text-sm">
-                        {item.jabatan}
-                      </td>
-                      <td className="px-6 py-4 text-slate-600 text-sm">
+                      <td className="px-3 py-2 text-slate-500 text-[10px]">
                         {item.departemen_instansi}
-                      </td>
-                      <td className="px-6 py-4 text-right text-slate-400 text-xs">
-                        {new Date(item.created_at).toLocaleDateString()}
                       </td>
                     </tr>
                   )
                 })}
                 {filteredData.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
+                    <td colSpan={4} className="px-6 py-12 text-center text-slate-400">
                       Tidak ada data ditemukan
                     </td>
                   </tr>

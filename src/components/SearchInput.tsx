@@ -66,7 +66,7 @@ export function SearchInput({ onSelect, value, onChange }: SearchInputProps) {
 
   return (
     <div className="space-y-1">
-      <label className="text-xs font-bold text-slate-500 tracking-wider">NAMA PESERTA</label>
+      <label className="text-xs font-bold text-slate-500 tracking-wider">NAMA</label>
       <div ref={containerRef} className="relative">
         <div className="relative">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />

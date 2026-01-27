@@ -10,8 +10,8 @@ export default function Home() {
       <MotionBackground />
       
       {/* Logo & Title Section - CSS animations instead of framer-motion */}
-      <div className="text-center mb-8 animate-fade-in">
-        <div className="mb-4">
+      <div className="text-center mb-6 animate-fade-in">
+        <div className="mb-3">
           <Image
             src="/st_logo.png"
             alt="Logo PT Semen Tonasa"
@@ -21,20 +21,16 @@ export default function Home() {
             className="mx-auto drop-shadow-2xl"
           />
         </div>
-        
-        <h1 className="text-2xl sm:text-3xl font-bold font-sig-headline mb-1">
+        <h1 className="text-2xl sm:text-3xl font-bold font-sig-headline mb-1 leading-tight">
           RAKER 2026
         </h1>
-        
-        <h2 className="text-lg sm:text-xl font-sig-text mb-1">
+        <h2 className="text-lg sm:text-xl font-sig-text mb-1 leading-tight">
           PT SEMEN TONASA
-        </h2>
-        
-        <p className="text-sm sm:text-base font-sig-text">
+        </h2>        
+        <p className="text-sm sm:text-base font-sig-text leading-tight">
           Makassar, 11 - 12 Februari 2026
         </p>
       </div>
-
       {/* Registration Form */}
       <RegistrationForm />
 
