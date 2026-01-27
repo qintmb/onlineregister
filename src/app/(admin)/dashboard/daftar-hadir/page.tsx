@@ -3,11 +3,14 @@
 import { useEffect, useState } from 'react'
 import { supabase, type DaftarHadir } from '@/lib/supabase'
 import * as XLSX from 'xlsx'
-import { Download, FileText } from 'lucide-react'
+import { Download, FileText, Trash2, X, CheckSquare, Square, Loader2 } from 'lucide-react'
 
 export default function DaftarHadirPage() {
   const [data, setData] = useState<DaftarHadir[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isDeleteMode, setDeleteMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     fetchData()
@@ -60,6 +63,44 @@ export default function DaftarHadirPage() {
     window.print()
   }
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    )
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === data.length) {
+      setSelectedIds([])
+    } else {
+      setSelectedIds(data.map(item => item.id))
+    }
+  }
+
+  const handleDelete = async () => {
+    if (selectedIds.length === 0) return
+    if (!confirm(`Yakin ingin menghapus ${selectedIds.length} data terpilih?`)) return
+
+    setIsDeleting(true)
+    try {
+      const { error } = await supabase
+        .from('daftar_hadir')
+        .delete()
+        .in('id', selectedIds)
+
+      if (error) throw error
+
+      await fetchData()
+      setSelectedIds([])
+      setDeleteMode(false)
+    } catch (err) {
+      console.error('Error deleting:', err)
+      alert('Gagal menghapus data')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   return (
     <div className="space-y-4">
       <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 no-print">
@@ -73,26 +114,59 @@ export default function DaftarHadirPage() {
           <p className="text-slate-500 text-sm">Real-time update peserta registrasi</p>
         </div>
         <div className="flex gap-2">
-          <button 
-            onClick={fetchData} 
-            className="px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 transition"
-          >
-            Refresh
-          </button>
-          <button 
-            onClick={exportToExcel} 
-            className="px-4 py-2 bg-green-600 hover:bg-green-500 rounded-lg text-sm text-white transition flex items-center gap-2"
-          >
-            <Download size={16} />
-            Excel
-          </button>
-          <button 
-            onClick={handlePrint} 
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm text-white transition flex items-center gap-2"
-          >
-            <FileText size={16} />
-            Print
-          </button>
+          {isDeleteMode ? (
+            <>
+              <button 
+                onClick={() => {
+                  setDeleteMode(false)
+                  setSelectedIds([])
+                }} 
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm text-slate-700 transition flex items-center gap-2"
+                disabled={isDeleting}
+              >
+                <X size={16} />
+                Batal
+              </button>
+              <button 
+                onClick={handleDelete} 
+                disabled={selectedIds.length === 0 || isDeleting}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-sm text-white transition flex items-center gap-2"
+              >
+                {isDeleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                Hapus ({selectedIds.length})
+              </button>
+            </>
+          ) : (
+            <>
+              <button 
+                onClick={fetchData} 
+                className="px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 transition"
+              >
+                Refresh
+              </button>
+              <button 
+                onClick={() => setDeleteMode(true)} 
+                className="px-4 py-2 bg-white hover:bg-red-50 border border-slate-200 hover:border-red-200 hover:text-red-600 rounded-lg text-sm text-slate-700 transition flex items-center gap-2"
+              >
+                <Trash2 size={16} />
+                Delete
+              </button>
+              <button 
+                onClick={exportToExcel} 
+                className="px-4 py-2 bg-green-600 hover:bg-green-500 rounded-lg text-sm text-white transition flex items-center gap-2"
+              >
+                <Download size={16} />
+                Excel
+              </button>
+              <button 
+                onClick={handlePrint} 
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm text-white transition flex items-center gap-2"
+              >
+                <FileText size={16} />
+                Print
+              </button>
+            </>
+          )}
         </div>
       </header>
       
@@ -115,6 +189,17 @@ export default function DaftarHadirPage() {
             <table className="w-full text-left">
               <thead className="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-wider border-b border-slate-200 print:bg-white print:text-black print:border-black">
                 <tr>
+                  {isDeleteMode && (
+                    <th className="px-3 py-2 w-10 text-center no-print">
+                      <button onClick={toggleSelectAll} className="hover:text-slate-800">
+                        {data.length > 0 && selectedIds.length === data.length ? (
+                          <CheckSquare size={16} className="text-blue-600" />
+                        ) : (
+                          <Square size={16} />
+                        )}
+                      </button>
+                    </th>
+                  )}
                   <th className="px-2 md:px-3 py-2 font-semibold w-10 text-center">No</th>
                   <th className="px-2 md:px-3 py-2 font-semibold">Waktu</th>
                   <th className="px-2 md:px-3 py-2 font-semibold">Nama</th>
@@ -125,7 +210,24 @@ export default function DaftarHadirPage() {
               </thead>
               <tbody className="divide-y divide-slate-100 print:divide-gray-300">
                 {data.map((item, index) => (
-                  <tr key={item.id} className="hover:bg-slate-50 transition-colors print:hover:bg-white">
+                  <tr 
+                    key={item.id} 
+                    className={`hover:bg-slate-50 transition-colors print:hover:bg-white ${
+                      selectedIds.includes(item.id) && isDeleteMode ? 'bg-blue-50/50' : ''
+                    }`}
+                    onClick={() => isDeleteMode && toggleSelect(item.id)}
+                  >
+                    {isDeleteMode && (
+                      <td className="px-3 py-2 text-center no-print cursor-pointer">
+                        <div className="flex justify-center items-center">
+                          {selectedIds.includes(item.id) ? (
+                            <CheckSquare size={16} className="text-blue-600" />
+                          ) : (
+                            <Square size={16} className="text-slate-400" />
+                          )}
+                        </div>
+                      </td>
+                    )}
                     <td className="px-2 md:px-3 py-2 text-slate-500 text-xs text-center print:text-black">
                       {index + 1}
                     </td>
@@ -168,7 +270,7 @@ export default function DaftarHadirPage() {
                 ))}
                 {data.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
+                    <td colSpan={isDeleteMode ? 7 : 6} className="px-6 py-12 text-center text-slate-400">
                       Belum ada data registrasi.
                     </td>
                   </tr>

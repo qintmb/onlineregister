@@ -159,7 +159,11 @@ export function RegistrationForm() {
 
           {/* Signature */}
           <div className="space-y-1">
-            <SignatureCanvas ref={signatureRef} onSignatureChange={setSignature} />
+            <SignatureCanvas 
+              ref={signatureRef} 
+              onSignatureChange={setSignature} 
+              disabled={!selectedParticipant}
+            />
           </div>
 
           {/* Validation Warning */}
