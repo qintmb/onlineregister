@@ -13,21 +13,15 @@ export default function Home() {
       <div className="text-center mb-6 animate-fade-in">
         <div className="mb-3">
           <Image
-            src="/st_logo.png"
-            alt="Logo PT Semen Tonasa"
-            width={80}
-            height={80}
+            src="/raker_logo.svg"
+            alt="RAKER LOGO"
+            width={230}
+            height={230}
             priority
             className="mx-auto drop-shadow-2xl"
           />
-        </div>
-        <h1 className="text-2xl sm:text-3xl font-bold font-sig-headline mb-1 leading-tight">
-          RAKER 2026
-        </h1>
-        <h2 className="text-lg sm:text-xl font-sig-text mb-1 leading-tight">
-          PT SEMEN TONASA
-        </h2>        
-        <p className="text-sm sm:text-base font-sig-text leading-tight">
+        </div>     
+        <p className="text-[10px] sm:text-base font-sig-text leading-tight">
           Makassar, 11 - 12 Februari 2026
         </p>
       </div>
@@ -35,7 +29,7 @@ export default function Home() {
       <RegistrationForm />
 
       {/* Footer */}
-      <footer className="mt-8 text-center text-slate-400 text-xs">
+      <footer className="mt-8 text-center text-slate-400 text-[9px]">
         © 2026 PT Semen Tonasa. All rights reserved.
       </footer>
     </main>

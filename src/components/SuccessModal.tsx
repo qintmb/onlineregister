@@ -44,14 +44,13 @@ export function SuccessModal({ isOpen, onClose, nama }: SuccessModalProps) {
               <CheckCircle2 className="text-green-600" size={40} />
             </motion.div>
 
-            <h3 className="text-xl font-bold text-slate-900 mb-2">
+            <h3 className="text-md font-bold text-slate-900 mb-1">
               Registrasi Berhasil!
             </h3>
-            
-            <p className="text-slate-600 mb-6 leading-relaxed">
-              Terima kasih <span className="font-semibold text-slate-900">{nama}</span>, data kehadiran Anda telah tersimpan.
+            <p className="text-sm text-slate-600 mb-1 leading-relaxed">
+              Terima kasih <span className="font-md text-red-600">{nama}</span>
             </p>
-
+             <p className="text-sm text-slate-600 mb-6 leading-relaxed leading-tight"> Absensi Anda telah tersimpan.</p>
             <button
               onClick={onClose}
               className="glass-button w-full bg-blue-600 hover:bg-blue-700 py-3 rounded-xl shadow-lg shadow-blue-500/20"

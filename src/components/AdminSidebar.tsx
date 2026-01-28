@@ -19,11 +19,7 @@ export function AdminSidebar() {
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex w-64 h-dvh bg-white border-r border-slate-200 fixed left-0 top-0 flex-col z-50">
         <div className="p-6 flex items-center gap-3 border-b border-slate-100">
-          <Image src="/st_logo.png" alt="Logo" width={32} height={32} className="w-8 h-8" unoptimized />
-          <div>
-            <h2 className="font-bold text-slate-900 text-sm">RAKER 2026</h2>
-            <p className="text-xs text-slate-500">Admin Panel</p>
-          </div>
+          <Image src="/raker_logo.svg" alt="Logo" width={50} height={50} className="w-40 h-40" unoptimized />
         </div>
 
         <nav className="flex-1 p-4 space-y-2">

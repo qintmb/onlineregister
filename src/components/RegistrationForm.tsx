@@ -125,11 +125,11 @@ export function RegistrationForm() {
     <>
       <div className="glass-card w-full max-w-sm p-6 space-y-5 animate-fade-in">
         <div className="text-center space-y-1 mb-2">
-          <h2 className="text-lg font-bold text-slate-900 leading-tight">REGISTRASI</h2>
-          <div className="h-1 w-12 bg-blue-600 mx-auto rounded-full opacity-80"></div>
+          <h2 className="text-sm font-bold text-slate-900 leading-tight">REGISTRASI</h2>
+          <div className="h-0.5 w-24 bg-red-600 mx-auto rounded-full opacity-80"></div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3">
           {/* Search */}
           <SearchInput
             value={searchValue}
@@ -148,9 +148,9 @@ export function RegistrationForm() {
           {/* Jabatan & Instansi - Same Width as Nama */}
           <div className="grid grid-cols-1 gap-3">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-500 tracking-wider uppercase">Jabatan</label>
+              <label className="text-xs font-bold text-red-500 tracking-wider uppercase">Jabatan</label>
               <div className="relative">
-                <Briefcase className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                <Briefcase className="absolute right-3 top-1/2 -translate-y-1/2 text-red-300" size={14} />
                 <input
                   type="text"
                   value={jabatan}
@@ -162,9 +162,9 @@ export function RegistrationForm() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-500 tracking-wider uppercase">DEPT. / UNIT</label>
+              <label className="text-xs font-bold text-red-500 tracking-wider uppercase">DEPT. / UNIT</label>
               <div className="relative">
-                <Building2 className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                <Building2 className="absolute right-3 top-1/2 -translate-y-1/2 text-red-300" size={14} />
                 <input
                   type="text"
                   value={instansi}
@@ -212,14 +212,14 @@ export function RegistrationForm() {
               type="button"
               onClick={handleCancel}
               disabled={isSubmitting || isCheckingStatus}
-              className="glass-button glass-button-secondary py-2.5 text-sm"
+              className="glass-button glass-button-secondary py-2.5 text-xs"
             >
               Batal
             </button>
             <button
               type="submit"
               disabled={isSubmitting || !isFormComplete || isCheckingStatus}
-              className={`glass-button py-2.5 text-sm flex items-center justify-center gap-2 shadow-blue-500/20 transition-all ${
+              className={`glass-button py-2.5 text-xs flex items-center justify-center gap-2 shadow-blue-500/20 transition-all ${
                 !isFormComplete || isCheckingStatus
                    ? 'bg-slate-300 cursor-not-allowed hover:bg-slate-300' 
                    : 'bg-blue-600 hover:bg-blue-700'

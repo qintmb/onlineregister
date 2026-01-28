@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { login } from '@/app/actions/auth'
 import { MotionBackground } from '@/components/MotionBackground'
 import { Lock } from 'lucide-react'
+import Image from 'next/image'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const initialState = { error: '' } as any;
@@ -22,12 +23,19 @@ export default function LoginPage() {
         className="glass-card w-full max-w-sm p-8"
       >
         <div className="flex justify-center mb-6">
-          <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center">
-            <Lock className="text-blue-600" size={32} />
-          </div>
+          <div className="mb-3">
+          <Image
+            src="/raker_logo.svg"
+            alt="RAKER LOGO"
+            width={230}
+            height={230}
+            priority
+            className="mx-auto drop-shadow-2xl"
+          />
+        </div> 
         </div>
 
-        <h1 className="text-2xl font-bold text-slate-900 text-center mb-8">Admin Login</h1>
+        <h1 className="text-xl font-bold text-slate-900 text-center mb-8">Admin Login</h1>
 
         <form action={formAction} className="space-y-4">
           <div className="space-y-1">
