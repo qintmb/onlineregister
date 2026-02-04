@@ -2,8 +2,42 @@
 
 import { useEffect, useState } from 'react'
 import { supabase, type DaftarNama } from '@/lib/supabase'
-import { Search, Plus, X, List, CheckCircle, XCircle } from 'lucide-react'
+import { Search, Plus, X, Trash2, CheckCircle, XCircle, AlertTriangle, Check, ChevronDown } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+
+const DEPT_OPTIONS = [
+  'DANA PENSIUN',
+  'DEPT. OF CLINKER & CEMENT PRODUCTION',
+  'DEPT. OF COMMUNICATION & LGA',
+  'DEPT. OF FINANCE (BUSINESS CONTROLLER)',
+  'DEPT. OF HUMAN CAPITAL & GRC',
+  'DEPT. OF INFRASTRUCTURE',
+  'DEPT. OF INTERNAL AUDIT',
+  'DEPT. OF INVENTORY MANAGEMENT',
+  'DEPT. OF MAINTENANCE',
+  'DEPT. OF MARKET PLANNING & DEVELOPMENT',
+  'DEPT. OF MINING & POWER PLANT',
+  'DEPT. OF PRODUCTION PLANNING & CONTROL',
+  'DEPT. OF PROJECT MGMT & MAINT. SUPPORT',
+  'DEPT. OF SALES',
+  'DEWAN KOMISARIS',
+  'DIREKSI',
+  'GROUP HEAD OF PROCUREMENT',
+  'KOMITE AUDIT',
+  'KOPKAR ST',
+  'OOTC',
+  'PT BIRINGKASSI RAYA',
+  'PT EMKL TOPABIRING',
+  'PT PELSINDO',
+  'PT PKM',
+  'PT SETRA',
+  'PT TONASA LINES',
+  'SEK. DEKOM / KOMITE PEMANTAU RISIKO',
+  'SKST',
+  'STAF SEK. DEKOM',
+  'UNIT OF WAREHOUSE',
+  'YKST'
+]
 
 export default function PesertaPage() {
   const [data, setData] = useState<DaftarNama[]>([])
@@ -13,6 +47,14 @@ export default function PesertaPage() {
   const [filterStatus, setFilterStatus] = useState<'all' | 'checked-in' | 'not-checked-in'>('all')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  
+  // Delete State
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [isDeleteMode, setIsDeleteMode] = useState(false)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [showSuccessToast, setShowSuccessToast] = useState(false)
+  const [deletedCount, setDeletedCount] = useState(0)
   
   // Form State
   const [formData, setFormData] = useState({
@@ -74,6 +116,69 @@ export default function PesertaPage() {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  // Toggle single item selection
+  const toggleSelectId = (id: string) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(id)) {
+        newSet.delete(id)
+      } else {
+        newSet.add(id)
+      }
+      return newSet
+    })
+  }
+
+  // Toggle select all visible items
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredData.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(filteredData.map(item => item.id)))
+    }
+  }
+
+  // Handle delete peserta
+  const handleDeletePeserta = async () => {
+    if (selectedIds.size === 0) return
+    
+    setIsDeleting(true)
+    try {
+      const idsToDelete = Array.from(selectedIds)
+      
+      const { error } = await supabase
+        .from('daftar_nama')
+        .delete()
+        .in('id', idsToDelete)
+
+      if (error) throw error
+
+      setDeletedCount(idsToDelete.length)
+      setIsDeleteModalOpen(false)
+      setSelectedIds(new Set())
+      setIsDeleteMode(false)
+      
+      // Show success toast
+      setShowSuccessToast(true)
+      setTimeout(() => {
+        setShowSuccessToast(false)
+      }, 1000)
+      
+      fetchData() // Refresh list
+    } catch (err) {
+      console.error(err)
+      alert('Gagal menghapus peserta')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  // Cancel delete mode
+  const cancelDeleteMode = () => {
+    setIsDeleteMode(false)
+    setSelectedIds(new Set())
   }
 
   const filteredData = data.filter(item => {
@@ -146,13 +251,50 @@ export default function PesertaPage() {
               className="glass-input pl-10 py-2 text-sm bg-white border-slate-200 w-full"
             />
           </div>
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white flex items-center gap-2 whitespace-nowrap text-sm shadow-sm justify-center"
-          >
-            <Plus size={16} />
-            Add Peserta
-          </button>
+          
+          {/* Action Buttons */}
+          <div className="flex gap-2">
+            {isDeleteMode ? (
+              <>
+                <button
+                  onClick={cancelDeleteMode}
+                  className="px-4 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg text-slate-700 flex items-center gap-2 whitespace-nowrap text-sm shadow-sm justify-center transition-colors"
+                >
+                  <X size={16} />
+                  Batal
+                </button>
+                <button 
+                  onClick={() => setIsDeleteModalOpen(true)}
+                  disabled={selectedIds.size === 0}
+                  className={`px-4 py-2 rounded-lg text-white flex items-center gap-2 whitespace-nowrap text-sm shadow-sm justify-center transition-colors ${
+                    selectedIds.size > 0 
+                      ? 'bg-red-600 hover:bg-red-700' 
+                      : 'bg-red-300 cursor-not-allowed'
+                  }`}
+                >
+                  <Trash2 size={16} />
+                  Delete {selectedIds.size > 0 && `(${selectedIds.size})`}
+                </button>
+              </>
+            ) : (
+              <>
+                <button 
+                  onClick={() => setIsDeleteMode(true)}
+                  className="px-4 py-2 bg-red-100 hover:bg-red-200 rounded-lg text-red-600 flex items-center gap-2 whitespace-nowrap text-sm shadow-sm justify-center transition-colors"
+                >
+                  <Trash2 size={16} />
+                  Delete
+                </button>
+                <button 
+                  onClick={() => setIsModalOpen(true)}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white flex items-center gap-2 whitespace-nowrap text-sm shadow-sm justify-center"
+                >
+                  <Plus size={16} />
+                  Add Peserta
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </header>
 
@@ -167,6 +309,16 @@ export default function PesertaPage() {
             <table className="w-full text-left">
               <thead className="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-wider border-b border-slate-200">
                 <tr>
+                  {isDeleteMode && (
+                    <th className="px-3 py-2 font-semibold w-10 text-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.size === filteredData.length && filteredData.length > 0}
+                        onChange={toggleSelectAll}
+                        className="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer"
+                      />
+                    </th>
+                  )}
                   <th className="px-3 py-2 font-semibold w-12 text-center">Status</th>
                   <th className="px-3 py-2 font-semibold">Nama & Jabatan</th>
                   <th className="px-3 py-2 font-semibold">DEPT/ Unit</th>
@@ -175,8 +327,25 @@ export default function PesertaPage() {
               <tbody className="divide-y divide-slate-100">
                 {filteredData.map((item) => {
                   const isCheckedIn = checkedInUuids.has(item.id)
+                  const isSelected = selectedIds.has(item.id)
                   return (
-                    <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                    <tr 
+                      key={item.id} 
+                      className={`transition-colors cursor-pointer ${
+                        isSelected ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-slate-50'
+                      }`}
+                      onClick={() => isDeleteMode && toggleSelectId(item.id)}
+                    >
+                      {isDeleteMode && (
+                        <td className="px-3 py-2 text-center" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleSelectId(item.id)}
+                            className="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500 cursor-pointer"
+                          />
+                        </td>
+                      )}
                       <td className="px-3 py-2 text-center">
                         <div className="flex justify-center">
                           {isCheckedIn ? (
@@ -272,14 +441,20 @@ export default function PesertaPage() {
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-500 tracking-wider">INSTANSI / DEPARTEMEN</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.departemen_instansi}
-                    onChange={(e) => setFormData({...formData, departemen_instansi: e.target.value})}
-                    className="glass-input w-full p-2.5 bg-slate-50 border-slate-200"
-                    placeholder="Instansi"
-                  />
+                  <div className="relative">
+                    <select
+                      required
+                      value={formData.departemen_instansi}
+                      onChange={(e) => setFormData({...formData, departemen_instansi: e.target.value})}
+                      className="glass-input w-full p-2.5 bg-slate-50 border-slate-200 appearance-none cursor-pointer"
+                    >
+                      <option value="" disabled>Pilih Instansi/Departemen</option>
+                      {DEPT_OPTIONS.map((opt) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
+                  </div>
                 </div>
 
                 <div className="flex gap-3 pt-4">
@@ -301,6 +476,84 @@ export default function PesertaPage() {
               </form>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {isDeleteModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              onClick={() => setIsDeleteModalOpen(false)}
+              className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 relative z-10"
+            >
+              <div className="flex flex-col items-center text-center">
+                <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                  <AlertTriangle size={28} className="text-red-600" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 mb-2">Konfirmasi Hapus</h3>
+                <p className="text-slate-500 text-sm mb-6">
+                  Apakah Anda yakin ingin menghapus <span className="font-semibold text-red-600">{selectedIds.size} peserta</span>? 
+                  <br />Tindakan ini tidak dapat dibatalkan.
+                </p>
+
+                <div className="flex gap-3 w-full">
+                  <button
+                    type="button"
+                    onClick={() => setIsDeleteModalOpen(false)}
+                    disabled={isDeleting}
+                    className="glass-button glass-button-secondary flex-1 py-2.5"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDeletePeserta}
+                    disabled={isDeleting}
+                    className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {isDeleting ? (
+                      <>
+                        <div className="spinner w-4 h-4 border-white/30 border-t-white" />
+                        Menghapus...
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 size={16} />
+                        Ya, Hapus
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Success Toast */}
+      <AnimatePresence>
+        {showSuccessToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[110] bg-green-600 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3"
+          >
+            <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">
+              <Check size={14} className="text-white" />
+            </div>
+            <span className="font-medium text-sm">{deletedCount} peserta berhasil dihapus</span>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
