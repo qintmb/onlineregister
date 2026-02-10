@@ -322,6 +322,7 @@ export default function PesertaPage() {
                   <th className="px-3 py-2 font-semibold w-12 text-center">Status</th>
                   <th className="px-3 py-2 font-semibold">Nama & Jabatan</th>
                   <th className="px-3 py-2 font-semibold">DEPT/ Unit</th>
+                  <th className="px-3 py-2 font-semibold text-center">Souvenir</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -376,12 +377,15 @@ export default function PesertaPage() {
                       <td className="px-3 py-2 text-slate-500 text-[10px]">
                         {item.departemen_instansi}
                       </td>
+                      <td className="px-3 py-2 text-slate-600 text-xs text-center font-semibold">
+                        {item.souvenir ?? '-'}
+                      </td>
                     </tr>
                   )
                 })}
                 {filteredData.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center text-slate-400">
+                    <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
                       Tidak ada data ditemukan
                     </td>
                   </tr>

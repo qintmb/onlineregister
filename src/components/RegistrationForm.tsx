@@ -1,18 +1,18 @@
 import { useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { Briefcase, Building2 } from 'lucide-react'
 import { SearchInput } from './SearchInput'
 import { SignatureCanvas, SignatureCanvasHandle } from './SignatureCanvas'
-import { SuccessModal } from './SuccessModal'
 import { supabase, type DaftarNama } from '@/lib/supabase'
 
 export function RegistrationForm() {
+  const router = useRouter()
   const [searchValue, setSearchValue] = useState('')
   const [selectedParticipant, setSelectedParticipant] = useState<DaftarNama | null>(null)
   const [jabatan, setJabatan] = useState('')
   const [instansi, setInstansi] = useState('')
   const [signature, setSignature] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [showSuccess, setShowSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isAlreadyRegistered, setIsAlreadyRegistered] = useState(false)
   const [isCheckingStatus, setIsCheckingStatus] = useState(false)
@@ -42,7 +42,9 @@ export function RegistrationForm() {
       
       if (fetchError) throw fetchError
       if (data) {
-        setIsAlreadyRegistered(true)
+        // Already registered → redirect to profile page
+        router.push(`/profile?id=${participant.id}`)
+        return
       }
     } catch (err) {
       console.error('Error checking registration status:', err)
@@ -107,7 +109,9 @@ export function RegistrationForm() {
         })
 
       if (insertError) throw insertError
-      setShowSuccess(true)
+      
+      // Redirect to profile page
+      router.push(`/profile?id=${selectedParticipant.id}`)
     } catch (err) {
       console.error(err)
       setError('Gagal submit. Jalankan RLS fix jika error berlanjut.')
@@ -116,10 +120,6 @@ export function RegistrationForm() {
     }
   }
 
-  const handleSuccessClose = () => {
-    setShowSuccess(false)
-    handleCancel()
-  }
 
   return (
     <>
@@ -231,11 +231,6 @@ export function RegistrationForm() {
         </form>
       </div>
 
-      <SuccessModal
-        isOpen={showSuccess}
-        onClose={handleSuccessClose}
-        nama={selectedParticipant?.nama || ''}
-      />
     </>
   )
 }

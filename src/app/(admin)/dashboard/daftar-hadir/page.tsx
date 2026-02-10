@@ -6,7 +6,7 @@ import * as XLSX from 'xlsx'
 import { Download, FileText, Trash2, X, CheckSquare, Square, Loader2 } from 'lucide-react'
 
 export default function DaftarHadirPage() {
-  const [data, setData] = useState<DaftarHadir[]>([])
+  const [data, setData] = useState<(DaftarHadir & { souvenir: number | null })[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isDeleteMode, setDeleteMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -18,13 +18,33 @@ export default function DaftarHadirPage() {
 
   const fetchData = async () => {
     try {
+      // Fetch daftar_hadir
       const { data: result, error } = await supabase
         .from('daftar_hadir')
         .select('*')
         .order('check_in', { ascending: false })
 
       if (error) throw error
-      setData(result || [])
+
+      // Fetch souvenir from daftar_nama for each uuid
+      const uuids = (result || []).map(r => r.uuid).filter(Boolean) as string[]
+      let souvenirMap: Record<string, number | null> = {}
+      if (uuids.length > 0) {
+        const { data: namaData } = await supabase
+          .from('daftar_nama')
+          .select('id, souvenir')
+          .in('id', uuids)
+        if (namaData) {
+          souvenirMap = Object.fromEntries(namaData.map(n => [n.id, n.souvenir]))
+        }
+      }
+
+      const enriched = (result || []).map(item => ({
+        ...item,
+        souvenir: item.uuid ? (souvenirMap[item.uuid] ?? null) : null
+      }))
+
+      setData(enriched)
     } catch (err) {
       console.error(err)
     } finally {
@@ -37,10 +57,10 @@ export default function DaftarHadirPage() {
     const wsData: (string | number)[][] = []
     
     // Row 1: Title (will be merged)
-    wsData.push(['DAFTAR HADIR RAKER 2026 PT SEMEN TONASA', '', '', '', '', ''])
+    wsData.push(['DAFTAR HADIR RAKER 2026 PT SEMEN TONASA', '', '', '', '', '', ''])
     
     // Row 2: Empty spacer
-    wsData.push(['', '', '', '', '', ''])
+    wsData.push(['', '', '', '', '', '', ''])
     
     // Row 3: Info row
     const exportDate = new Date().toLocaleDateString('id-ID', {
@@ -48,13 +68,13 @@ export default function DaftarHadirPage() {
       month: 'numeric', 
       year: 'numeric'
     })
-    wsData.push([`Total: ${data.length} peserta`, '', '', '', '', `Export: ${exportDate}`])
+    wsData.push([`Total: ${data.length} peserta`, '', '', '', '', '', `Export: ${exportDate}`])
     
     // Row 4: Empty spacer
-    wsData.push(['', '', '', '', '', ''])
+    wsData.push(['', '', '', '', '', '', ''])
     
     // Row 5: Headers
-    wsData.push(['NO', 'WAKTU', 'NAMA', 'JABATAN', 'INSTANSI', 'TTD'])
+    wsData.push(['NO', 'WAKTU', 'NAMA', 'JABATAN', 'INSTANSI', 'SOUVENIR', 'TTD'])
     
     // Data rows
     data.forEach((item, index) => {
@@ -69,6 +89,7 @@ export default function DaftarHadirPage() {
         item.nama,
         item.jabatan,
         item.departemen_instansi,
+        item.souvenir ?? '-',
         '' // TTD placeholder - images not supported in basic xlsx
       ])
     })
@@ -82,12 +103,13 @@ export default function DaftarHadirPage() {
       { wch: 25 },  // NAMA
       { wch: 25 },  // JABATAN
       { wch: 30 },  // INSTANSI
+      { wch: 12 },  // SOUVENIR
       { wch: 15 }   // TTD
     ]
     
     // Merge title cell across all columns
     worksheet['!merges'] = [
-      { s: { r: 0, c: 0 }, e: { r: 0, c: 5 } } // Merge A1:F1
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } } // Merge A1:G1
     ]
 
     const workbook = XLSX.utils.book_new()
@@ -275,6 +297,7 @@ export default function DaftarHadirPage() {
                   <th className="px-2 md:px-3 py-2 font-semibold">Nama</th>
                   <th className="px-2 md:px-3 py-2 hidden md:table-cell print:table-cell font-semibold">Jabatan</th>
                   <th className="px-2 md:px-3 py-2 hidden md:table-cell print:table-cell font-semibold">Instansi</th>
+                  <th className="px-2 md:px-3 py-2 hidden md:table-cell print:table-cell font-semibold text-center">Souvenir</th>
                   <th className="px-2 md:px-3 py-2 text-center font-semibold">TTD</th>
                 </tr>
               </thead>
@@ -318,6 +341,9 @@ export default function DaftarHadirPage() {
                     <td className="px-2 md:px-3 py-2 text-slate-600 text-xs hidden md:table-cell print:table-cell print:text-black">
                       {item.departemen_instansi}
                     </td>
+                    <td className="px-2 md:px-3 py-2 text-slate-600 text-xs hidden md:table-cell print:table-cell print:text-black text-center font-semibold">
+                      {item.souvenir ?? '-'}
+                    </td>
                     <td className="px-2 md:px-3 py-2 flex justify-center">
                       <div className="relative w-10 h-6 md:w-12 md:h-8 print:w-16 print:h-10 bg-white rounded overflow-hidden cursor-pointer hover:scale-150 transition-transform origin-center border border-slate-200 print:border-none">
                         {item.photo_ttd_url ? (
@@ -340,7 +366,7 @@ export default function DaftarHadirPage() {
                 ))}
                 {data.length === 0 && (
                   <tr>
-                    <td colSpan={isDeleteMode ? 7 : 6} className="px-6 py-12 text-center text-slate-400">
+                    <td colSpan={isDeleteMode ? 8 : 7} className="px-6 py-12 text-center text-slate-400">
                       Belum ada data registrasi.
                     </td>
                   </tr>
