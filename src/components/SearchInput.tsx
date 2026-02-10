@@ -15,8 +15,15 @@ export function SearchInput({ onSelect, value, onChange }: SearchInputProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
+  const justSelected = useRef(false)
 
   useEffect(() => {
+    // Skip search if a name was just selected
+    if (justSelected.current) {
+      justSelected.current = false
+      return
+    }
+
     const searchParticipants = async () => {
       // Require minimum 3 characters for search
       if (value.length < 3) {
@@ -59,6 +66,7 @@ export function SearchInput({ onSelect, value, onChange }: SearchInputProps) {
   }, [])
 
   const handleSelect = (participant: DaftarNama) => {
+    justSelected.current = true
     onSelect(participant)
     setSuggestions([]) // Clear suggestions to ensure dropdown is closed
     setIsOpen(false)
@@ -66,7 +74,7 @@ export function SearchInput({ onSelect, value, onChange }: SearchInputProps) {
 
   return (
     <div className="space-y-1">
-      <label className="text-xs font-bold text-slate-500 tracking-wider">NAMA</label>
+      <label className="text-xs font-bold text-red-500 tracking-wider">NAMA</label>
       <div ref={containerRef} className="relative">
         <div className="relative">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />

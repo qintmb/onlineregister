@@ -213,7 +213,7 @@ export const SignatureCanvas = forwardRef<SignatureCanvasHandle, SignatureCanvas
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between">
-        <label className={`text-[10px] font-bold tracking-wider uppercase ${disabled ? 'text-slate-300' : 'text-slate-500'}`}>
+        <label className={`text-[11px] font-bold tracking-wider uppercase ${disabled ? 'text-red-600' : 'text-red-500'}`}>
           TANDA TANGAN
         </label>
         {hasSignature && !disabled && (
