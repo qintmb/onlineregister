@@ -1,22 +1,22 @@
-'use client'
+"use client";
 
-import { useActionState } from 'react'
-import { motion } from 'framer-motion'
-import { login } from '@/app/actions/auth'
-import { MotionBackground } from '@/components/MotionBackground'
-import { Lock } from 'lucide-react'
-import Image from 'next/image'
+import { useActionState } from "react";
+import { motion } from "framer-motion";
+import { login } from "@/app/actions/auth";
+import { MotionBackground } from "@/components/MotionBackground";
+import { Lock } from "lucide-react";
+import Image from "next/image";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const initialState = { error: '' } as any;
+const initialState = { error: "" } as any;
 
 export default function LoginPage() {
-  const [state, formAction, isPending] = useActionState(login, initialState)
+  const [state, formAction, isPending] = useActionState(login, initialState);
 
   return (
     <div className="min-h-dvh flex items-center justify-center p-4 relative overflow-hidden">
       <MotionBackground />
-      
+
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -24,22 +24,29 @@ export default function LoginPage() {
       >
         <div className="flex justify-center mb-6">
           <div className="mb-3">
-          <Image
-            src="/raker_logo.svg"
-            alt="RAKER LOGO"
-            width={230}
-            height={230}
-            priority
-            className="mx-auto drop-shadow-2xl"
-          />
-        </div> 
+            <Image
+              src="/st_logo.webp"
+              alt="RAKER LOGO"
+              width={90}
+              height={90}
+              priority
+              className="mx-auto drop-shadow-2xl"
+            />
+          </div>
         </div>
 
-        <h1 className="text-xl font-bold text-slate-900 text-center mb-8">Admin Login</h1>
+        <h1 className="text-xl font-bold text-slate-900 text-center mb-1">
+          Admin Login
+        </h1>
+        <p className="font-medium text-sm text-center mb-10 mt-1">
+          DATABASE ABSENSI RAPAT INTERNAL
+        </p>
 
         <form action={formAction} className="space-y-4">
           <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-500 tracking-wider">USERNAME</label>
+            <label className="text-xs font-bold text-slate-500 tracking-wider">
+              USERNAME
+            </label>
             <input
               name="username"
               type="text"
@@ -50,7 +57,9 @@ export default function LoginPage() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-500 tracking-wider">PASSWORD</label>
+            <label className="text-xs font-bold text-slate-500 tracking-wider">
+              PASSWORD
+            </label>
             <input
               name="password"
               type="password"
@@ -71,10 +80,10 @@ export default function LoginPage() {
             disabled={isPending}
             className="glass-button w-full mt-4 py-3"
           >
-            {isPending ? 'Authenticating...' : 'Login'}
+            {isPending ? "Authenticating..." : "Login"}
           </button>
         </form>
       </motion.div>
     </div>
-  )
+  );
 }

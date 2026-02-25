@@ -1,44 +1,51 @@
-'use client'
+"use client";
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { Users, FileText, LogOut } from 'lucide-react'
-import { logout } from '@/app/actions/auth'
-import Image from 'next/image'
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { FileText, LogOut, Users } from "lucide-react";
+import { logout } from "@/app/actions/auth";
+import Image from "next/image";
 
 export function AdminSidebar() {
-  const pathname = usePathname()
+  const pathname = usePathname();
 
   const links = [
-    { href: '/dashboard/daftar-hadir', label: 'Daftar Hadir', icon: FileText },
-    { href: '/dashboard/peserta', label: 'Peserta', icon: Users },
-  ]
+    { href: "/dashboard/daftar-hadir", label: "Daftar Hadir", icon: FileText },
+    { href: "/dashboard/peserta", label: "Peserta", icon: Users },
+  ];
 
   return (
     <>
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex w-64 h-dvh bg-white border-r border-slate-200 fixed left-0 top-0 flex-col z-50">
         <div className="p-6 flex items-center gap-3 border-b border-slate-100">
-          <Image src="/raker_logo.svg" alt="Logo" width={50} height={50} className="w-40 h-40" unoptimized />
+          <Image
+            src="/st_logo.webp"
+            alt="Logo"
+            width={10}
+            height={10}
+            className="w-15 h-15"
+            unoptimized
+          />
         </div>
 
         <nav className="flex-1 p-4 space-y-2">
           {links.map((link) => {
-            const isActive = pathname === link.href
+            const isActive = pathname === link.href;
             return (
               <Link
                 key={link.href}
                 href={link.href}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                   isActive
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
+                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                 }`}
               >
                 <link.icon size={18} />
                 <span className="text-sm font-medium">{link.label}</span>
               </Link>
-            )
+            );
           })}
         </nav>
 
@@ -56,19 +63,19 @@ export function AdminSidebar() {
       {/* Mobile Bottom Nav */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-slate-200 z-50 px-4 py-2 flex items-center justify-around">
         {links.map((link) => {
-          const isActive = pathname === link.href
+          const isActive = pathname === link.href;
           return (
             <Link
               key={link.href}
               href={link.href}
               className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors ${
-                 isActive ? 'text-blue-600' : 'text-slate-400'
+                isActive ? "text-blue-600" : "text-slate-400"
               }`}
             >
               <link.icon size={20} />
               <span className="text-[10px] font-medium">{link.label}</span>
             </Link>
-          )
+          );
         })}
         <button
           onClick={() => logout()}
@@ -79,5 +86,5 @@ export function AdminSidebar() {
         </button>
       </nav>
     </>
-  )
+  );
 }

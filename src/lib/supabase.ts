@@ -11,7 +11,6 @@ export interface DaftarNama {
   jabatan: string
   departemen_instansi: string
   created_at: string
-  souvenir: number | null
 }
 
 export interface DaftarHadir {

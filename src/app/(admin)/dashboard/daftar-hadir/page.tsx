@@ -6,7 +6,7 @@ import * as XLSX from 'xlsx'
 import { Download, FileText, Trash2, X, CheckSquare, Square, Loader2 } from 'lucide-react'
 
 export default function DaftarHadirPage() {
-  const [data, setData] = useState<(DaftarHadir & { souvenir: number | null })[]>([])
+  const [data, setData] = useState<DaftarHadir[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isDeleteMode, setDeleteMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -14,6 +14,30 @@ export default function DaftarHadirPage() {
 
   useEffect(() => {
     fetchData()
+
+    // Realtime subscription
+    const channel = supabase
+      .channel('realtime-daftar-hadir')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'daftar_hadir' },
+        (payload) => {
+          const newDaftarHadir = payload.new as DaftarHadir
+          setData((prev) => [newDaftarHadir, ...prev])
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'daftar_hadir' },
+        (payload) => {
+          setData((prev) => prev.filter(item => item.id !== payload.old.id))
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [])
 
   const fetchData = async () => {
@@ -26,25 +50,7 @@ export default function DaftarHadirPage() {
 
       if (error) throw error
 
-      // Fetch souvenir from daftar_nama for each uuid
-      const uuids = (result || []).map(r => r.uuid).filter(Boolean) as string[]
-      let souvenirMap: Record<string, number | null> = {}
-      if (uuids.length > 0) {
-        const { data: namaData } = await supabase
-          .from('daftar_nama')
-          .select('id, souvenir')
-          .in('id', uuids)
-        if (namaData) {
-          souvenirMap = Object.fromEntries(namaData.map(n => [n.id, n.souvenir]))
-        }
-      }
-
-      const enriched = (result || []).map(item => ({
-        ...item,
-        souvenir: item.uuid ? (souvenirMap[item.uuid] ?? null) : null
-      }))
-
-      setData(enriched)
+      setData(result || [])
     } catch (err) {
       console.error(err)
     } finally {
@@ -74,8 +80,8 @@ export default function DaftarHadirPage() {
     wsData.push(['', '', '', '', '', '', ''])
     
     // Row 5: Headers
-    wsData.push(['NO', 'WAKTU', 'NAMA', 'JABATAN', 'INSTANSI', 'SOUVENIR', 'TTD'])
-    
+    wsData.push(['NO', 'WAKTU', 'NAMA', 'JABATAN', 'INSTANSI', 'TTD'])
+
     // Data rows
     data.forEach((item, index) => {
       wsData.push([
@@ -89,13 +95,12 @@ export default function DaftarHadirPage() {
         item.nama,
         item.jabatan,
         item.departemen_instansi,
-        item.souvenir ?? '-',
         '' // TTD placeholder - images not supported in basic xlsx
       ])
     })
 
     const worksheet = XLSX.utils.aoa_to_sheet(wsData)
-    
+
     // Set column widths to match reference
     worksheet['!cols'] = [
       { wch: 5 },   // NO
@@ -103,7 +108,6 @@ export default function DaftarHadirPage() {
       { wch: 25 },  // NAMA
       { wch: 25 },  // JABATAN
       { wch: 30 },  // INSTANSI
-      { wch: 12 },  // SOUVENIR
       { wch: 15 }   // TTD
     ]
     
@@ -297,7 +301,6 @@ export default function DaftarHadirPage() {
                   <th className="px-2 md:px-3 py-2 font-semibold">Nama</th>
                   <th className="px-2 md:px-3 py-2 hidden md:table-cell print:table-cell font-semibold">Jabatan</th>
                   <th className="px-2 md:px-3 py-2 hidden md:table-cell print:table-cell font-semibold">Instansi</th>
-                  <th className="px-2 md:px-3 py-2 hidden md:table-cell print:table-cell font-semibold text-center">Souvenir</th>
                   <th className="px-2 md:px-3 py-2 text-center font-semibold">TTD</th>
                 </tr>
               </thead>
@@ -341,9 +344,6 @@ export default function DaftarHadirPage() {
                     <td className="px-2 md:px-3 py-2 text-slate-600 text-xs hidden md:table-cell print:table-cell print:text-black">
                       {item.departemen_instansi}
                     </td>
-                    <td className="px-2 md:px-3 py-2 text-slate-600 text-xs hidden md:table-cell print:table-cell print:text-black text-center font-semibold">
-                      {item.souvenir ?? '-'}
-                    </td>
                     <td className="px-2 md:px-3 py-2 flex justify-center">
                       <div className="relative w-10 h-6 md:w-12 md:h-8 print:w-16 print:h-10 bg-white rounded overflow-hidden cursor-pointer hover:scale-150 transition-transform origin-center border border-slate-200 print:border-none">
                         {item.photo_ttd_url ? (
@@ -366,7 +366,7 @@ export default function DaftarHadirPage() {
                 ))}
                 {data.length === 0 && (
                   <tr>
-                    <td colSpan={isDeleteMode ? 8 : 7} className="px-6 py-12 text-center text-slate-400">
+                    <td colSpan={isDeleteMode ? 7 : 6} className="px-6 py-12 text-center text-slate-400">
                       Belum ada data registrasi.
                     </td>
                   </tr>
