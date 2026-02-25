@@ -26,7 +26,7 @@ export default function LoginPage() {
           <div className="mb-3">
             <Image
               src="/st_logo.webp"
-              alt="RAKER LOGO"
+              alt="ST LOGO"
               width={90}
               height={90}
               priority
