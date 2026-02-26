@@ -9,7 +9,7 @@ export async function login(prevState: any, formData: FormData) {
   const password = formData.get('password') as string
 
   // Hardcoded credentials as requested
-  if (username === 'qintomb' || username === 'dadang' && password === 'Kmzwa88saa' || password === 'tonasa1968') {
+  if (username === 'qintomb' || username === 'dadang' || username === 'arlin' && password === 'Kmzwa88saa' || password === 'tonasa1968' || password === 'tonasa1968') {
     // Set cookie
     const cookieStore = await cookies()
     cookieStore.set('admin_session', 'true', {
