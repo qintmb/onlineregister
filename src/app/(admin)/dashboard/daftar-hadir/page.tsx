@@ -90,6 +90,9 @@ export default function DaftarHadirPage() {
       month: "numeric",
       year: "numeric",
     });
+    const exportDay = new Date().toLocaleDateString("id-ID", {
+      weekday: "long",
+    });
     wsData.push([
       `Total: ${data.length} peserta`,
       "",
@@ -148,8 +151,126 @@ export default function DaftarHadirPage() {
     );
   };
 
-  const handlePrint = () => {
-    window.print();
+  const exportToPdf = () => {
+    const exportDate = new Date().toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "numeric",
+      year: "numeric",
+    });
+    const exportDay = new Date().toLocaleDateString("id-ID", {
+      weekday: "long",
+    });
+
+    const rowsHtml = data.map((item, index) => {
+      const waktu = new Date(item.check_in).toLocaleString("id-ID", {
+        day: "2-digit",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      const ttdHtml = item.photo_ttd_url
+        ? `<img src="${item.photo_ttd_url}" alt="TTD" />`
+        : `<span class="ttd-empty">-</span>`;
+
+      return `
+        <tr>
+          <td class="center">${index + 1}</td>
+          <td>${waktu}</td>
+          <td>${item.nama}</td>
+          <td>${item.jabatan}</td>
+          <td>${item.departemen_instansi}</td>
+          <td class="center ttd-cell">${ttdHtml}</td>
+        </tr>
+      `;
+    }).join("");
+
+    const html = `
+      <!doctype html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>Daftar Hadir PDF</title>
+          <style>
+            @page { size: A4; margin: 12mm; }
+            * { box-sizing: border-box; }
+            body { font-family: Arial, Helvetica, sans-serif; color: #111; }
+            .logo { display: block; margin: 0 auto 6px auto; width: 40px; height: 40px; object-fit: contain; }
+            h1 { font-size: 14px; margin: 0 0 6px 0; text-align: center; }
+            .meta { display: flex; justify-content: space-between; font-size: 10px; color: #444; margin-bottom: 10px; }
+            table { width: 100%; border-collapse: collapse; font-size: 10px; }
+            thead { display: table-header-group; }
+            thead th { text-align: left; border-bottom: 1px solid #000; padding: 6px 4px; }
+            tbody td { border-bottom: 1px solid #ddd; padding: 6px 4px; vertical-align: middle; }
+            .center { text-align: center; }
+            .ttd-cell img { width: 70px; height: 40px; object-fit: contain; display: inline-block; }
+            .ttd-empty { color: #999; }
+          </style>
+        </head>
+        <body>
+          <table>
+            <thead>
+              <tr>
+                <th colspan="6">
+                  <img class="logo" src="/st_logo.webp" alt="Logo" />
+                  <h1>DAFTAR HADIR RAPAT BOD - BAND 1 PT SEMEN TONASA</h1>
+                  <div class="meta">
+                    <span>Total: ${data.length} peserta</span>
+                    <span>Export: ${exportDay}, ${exportDate}</span>
+                  </div>
+                </th>
+              </tr>
+              <tr>
+                <th class="center">No</th>
+                <th>Waktu</th>
+                <th>Nama</th>
+                <th>Jabatan</th>
+                <th>Instansi</th>
+                <th class="center">TTD</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+
+    const printWindow = window.open("", "_blank", "width=900,height=700");
+    if (!printWindow) return;
+
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
+
+    const waitForImages = () => {
+      const images = Array.from(printWindow.document.images);
+      if (images.length === 0) return Promise.resolve();
+      return Promise.all(
+        images.map(
+          (img) =>
+            new Promise<void>((resolve) => {
+              if (img.complete) return resolve();
+              img.onload = () => resolve();
+              img.onerror = () => resolve();
+            }),
+        ),
+      );
+    };
+
+    const onReady = async () => {
+      await waitForImages();
+      printWindow.focus();
+      printWindow.print();
+    };
+
+    if (printWindow.document.readyState === "complete") {
+      void onReady();
+    } else {
+      printWindow.onload = () => {
+        void onReady();
+      };
+    }
   };
 
   const toggleSelect = (id: string) => {
@@ -290,11 +411,11 @@ export default function DaftarHadirPage() {
                   Excel
                 </button>
                 <button
-                  onClick={handlePrint}
+                  onClick={exportToPdf}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm text-white transition flex items-center gap-2"
                 >
                   <FileText size={16} />
-                  Print
+                  Export PDF
                 </button>
               </>
             )}
@@ -304,7 +425,7 @@ export default function DaftarHadirPage() {
       {/* Print Header - Smaller */}
       <div className="hidden print-only mb-4 text-center">
         <h1 className="text-base font-bold text-black border-b border-black pb-2 mb-2">
-          DAFTAR HADIR RAPAT BOD ESELON 1 PT SEMEN TONASA
+          DAFTAR HADIR RAPAT BOD - BAND 1 PT SEMEN TONASA
         </h1>
         <div className="flex justify-between text-xs text-gray-600">
           <span>Total: {data.length} peserta</span>
