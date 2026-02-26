@@ -25,14 +25,14 @@ export default function Home() {
           DIGITAL ABSENSI
         </p>
         <p className="font-heading font-bold text-sig-heading text-center leading-tight tracking-wider">
-          RAPAT RUTIN BOD ESELON 1
+          RAPAT BOD - BAND 1
         </p>
         <p className="font-sig-text text-slate-600 text-sm mt-2 text-center">
-          {new Date().toLocaleDateString('id-ID', {
-            weekday: 'long',
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric'
+          {new Date().toLocaleDateString("id-ID", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            year: "numeric",
           })}
         </p>
       </div>
